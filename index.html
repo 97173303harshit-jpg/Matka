@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Number Dashboard</title>
     <style>
-        /* Design part - Aapne pehle bhi CSS use ki hai */
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
@@ -13,31 +12,35 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
         }
         .container {
             background: rgba(255, 255, 255, 0.1);
-            padding: 40px;
+            padding: 30px;
             border-radius: 20px;
             backdrop-filter: blur(10px);
             box-shadow: 0 15px 35px rgba(0,0,0,0.2);
             text-align: center;
             border: 1px solid rgba(255,255,255,0.2);
-            width: 320px;
+            width: 100%;
+            max-width: 350px;
         }
-        h1 { font-size: 1.2rem; margin-bottom: 20px; letter-spacing: 2px; }
+        h1 { font-size: 1.2rem; margin-bottom: 10px; letter-spacing: 2px; text-transform: uppercase; }
         .number-display {
             font-size: 5rem;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 10px 0;
             text-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            color: #f1c40f;
         }
         .details {
             font-size: 0.9rem;
             background: rgba(0,0,0,0.2);
-            padding: 15px;
+            padding: 10px;
             border-radius: 10px;
+            margin-bottom: 20px;
         }
         .status {
             display: inline-block;
@@ -46,6 +49,23 @@
             background: #2ecc71;
             border-radius: 50%;
             margin-right: 5px;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        
+        /* QR Code Styling */
+        .qr-section {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 15px;
+        }
+        .qr-section p { color: #333; font-weight: bold; margin-top: 0; margin-bottom: 10px; font-size: 0.8rem; }
+        #qr-code-img {
+            width: 180px;
+            height: 180px;
+            display: none; /* Jab tak link na mile hidden rahega */
+            margin: 0 auto;
         }
     </style>
 </head>
@@ -55,41 +75,52 @@
     <div style="font-size: 0.8rem; margin-bottom: 10px;">
         <span class="status"></span> LIVE UPDATES
     </div>
-    <h1>special result</h1>
+    <h1>Special Result</h1>
     
-    <!-- image.png ke hisaab se Column B ka data yahan dikhega -->
     <div class="number-display" id="num">--</div>
 
     <div class="details">
         <p>Date: <span id="dt">--/--/--</span></p>
         <p>Time: <span id="tm">00:00</span></p>
     </div>
+
+    <!-- QR Section -->
+    <div class="qr-section" id="qr-area">
+        <p>SCAN TO PAY / CONNECT</p>
+        <img id="qr-code-img" src="" alt="Payment QR">
+    </div>
 </div>
 
 <script>
-    // Is link ki jagah aapko apni published sheet ka CSV link daalna hoga
     const csvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT9rXg8mUIY97uR1qYftu2mfpCGwk9YTwNO2K8OGxl1gp06rtt5vHoVFyRPiepuirieVWRbrODuTear/pub?output=csv";
 
     async function updateDashboard() {
         try {
-            const response = await fetch(csvUrl);
+            const response = await fetch(csvUrl + "&cache_bust=" + new Date().getTime());
             const text = await response.text();
             const rows = text.split('\n');
             const data = rows[1].split(',');
 
-            // image.png ke columns ke hisaab se mapping
-            document.getElementById('dt').innerText = data[0];  // Column A: Date
-            document.getElementById('num').innerText = data[1]; // Column B: Number
-            document.getElementById('tm').innerText = data[2];  // Column C: Time
+            // Mapping based on your Google Sheet columns
+            document.getElementById('dt').innerText = data[0] || "--";  // Col A
+            document.getElementById('num').innerText = data[1] || "--"; // Col B
+            document.getElementById('tm').innerText = data[2] || "--";  // Col C
+            
+            // QR Code Logic - Taking link from Column D (data[3])
+            const qrLink = data[3] ? data[3].trim() : "";
+            const qrImg = document.getElementById('qr-code-img');
+            
+            if(qrLink && qrLink.startsWith('http')) {
+                qrImg.src = qrLink;
+                qrImg.style.display = 'block';
+            }
         } catch (e) {
-            console.log("Loading...");
+            console.log("Updating...");
         }
     }
 
-    // Website khulte hi update karein
     updateDashboard();
-    // Har 1 minute mein automatic naya data check karein
-    setInterval(updateDashboard, 60000);
+    setInterval(updateDashboard, 30000); // 30 seconds mein update karega
 </script>
 
 </body>
